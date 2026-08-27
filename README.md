@@ -7,7 +7,7 @@ This is a simple project to write to an sdcard from a pico. It shows how to incl
 Clone the project with FreeRTOS and FreeRTOS-FAT-CLI-for-RPi-Pico submodules:
 
 ```
-git clone --recurse-submodules <your-repo-url>
+git clone --recurse-submodules https://github.com/eremiticengineer/pico-sdcard-test
 ```
 
 If you cloned without recursing submodules:
