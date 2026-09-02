@@ -110,6 +110,7 @@ target_include_directories(${LIBRARY} PUBLIC
 target_link_libraries(${LIBRARY} PUBLIC
     pico_stdlib
     hardware_spi
+    FreeRTOS-Kernel
     FreeRTOS+FAT+CLI
 )
 
