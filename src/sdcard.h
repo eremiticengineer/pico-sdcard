@@ -1,5 +1,4 @@
-#ifndef SD_H
-#define SD_H
+#pragma once
 
 #include <stdio.h>
 #include "pico/stdlib.h"
@@ -11,17 +10,12 @@
 #include "ff_stdio.h"
 #include "ff_utils.h"
 
-//#include "hw_config.h"
-
 extern "C" void writeToSDTask(void* pvParameters);
 
-namespace Codebrane {
-
-class CBSD {
+class SDCard {
 public:
-    CBSD();
+    SDCard();
     void init();
-    //void writeAfterInit();
     void writeAfterInit(const std::string& data);
     void deinit();
     void writeDataToDisk();
@@ -33,7 +27,3 @@ public:
 private:
     FF_Disk_t *pxDisk;
 };
-
-} // namespace Codebrane
-
-#endif // SD_H

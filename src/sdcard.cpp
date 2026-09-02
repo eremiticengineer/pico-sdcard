@@ -8,8 +8,6 @@
 // https://forums.freertos.org/t/freertos-with-c-writing-a-class-with-a-task-as-a-method/18862/3
 // https://forums.freertos.org/t/using-the-queue-with-c-classes/18959/3
 
-using namespace Codebrane;
-
 static inline void stop() {
     fflush(stdout);
     __breakpoint();
@@ -18,24 +16,18 @@ static inline void stop() {
 void writeToSDTask(void* pvParameters) {
     while(true) {
         printf("here1/n");
-        CBSD* pCBSD = static_cast<CBSD*>(pvParameters);
+        SDCard* pSDCard = static_cast<SDCard*>(pvParameters);
         printf("here2/n");
-        // pCBSD->write();
         printf("here3/n");
-        delete pCBSD;
+        delete pSDCard;
         printf("here4/n");
-        //vTaskDelete(NULL);
         vTaskDelay(1000);
     }
 }
 
-CBSD::CBSD() {}
+SDCard::SDCard() {}
 
-
-
-//spi_t* spi_p2;
-
-void CBSD::writeDataToDisk() {
+void SDCard::writeDataToDisk() {
     spi_t* spi_p = new spi_t();
     spi_p->hw_inst = spi1;  // RP2040 SPI component
     spi_p->miso_gpio = 12;
@@ -86,7 +78,7 @@ spi_t* spi_p2;
 sd_spi_if_t *spi_if_p2;
 sd_card_t *sd_card_p2;
 FF_Disk_t *pxDisk2;
-void CBSD::init() {
+void SDCard::init() {
     spi_p2 = new spi_t();
     spi_p2->hw_inst = spi1;  // RP2040 SPI component
     spi_p2->miso_gpio = 12;
@@ -112,24 +104,16 @@ void CBSD::init() {
     FF_SDDiskMount(pxDisk2);
     FF_FS_Add(sd_card_p2->mount_point, pxDisk2);
 }
-// void CBSD::writeAfterInit() {
-//     std::string filename = std::string(sd_card_p2->mount_point) + "/filename3.txt";
-//     FF_FILE *pxFile = ff_fopen(filename.c_str(), "a");
-//     if (!pxFile) {
-//         printf("========================= cannot open file\n");
-//     }
-//     ff_fprintf(pxFile, "Hello, world3!\n");
-//     ff_fclose(pxFile);
-//     printf("WRITTEN DATA -----------------------------------\n");
-// }
-void CBSD::writeAfterInit(const std::string& data) {
+
+void SDCard::writeAfterInit(const std::string& data) {
     std::string filename = std::string(sd_card_p2->mount_point) + "/sdcardtest.txt";
     FF_FILE *pxFile = ff_fopen(filename.c_str(), "a");
     ff_fprintf(pxFile, data.c_str());
     ff_fprintf(pxFile, "\n");
     ff_fclose(pxFile);
 }
-void CBSD::deinit() {
+
+void SDCard::deinit() {
     FF_FS_Remove(sd_card_p2->mount_point);
     FF_Unmount(pxDisk2);
     FF_SDDiskDelete(pxDisk2);
@@ -139,22 +123,14 @@ void CBSD::deinit() {
     delete spi_p2;
 }
 
-
-
-
-
-
-
-
-
-void CBSD::mount() {
+void SDCard::mount() {
     printf("mount\n");
     pxDisk = FF_SDDiskInit("sd0");
     FF_SDDiskMount(pxDisk);
     FF_FS_Add("/sd0", pxDisk);
 }
 
-void CBSD::unmount() {
+void SDCard::unmount() {
     printf("unmount\n");
     FF_FS_Remove("/sd0");
     FF_Unmount(pxDisk);
@@ -163,7 +139,7 @@ void CBSD::unmount() {
     //FF_SDDiskDelete(pxDisk);
 }
 
-void CBSD::write(const std::string& data) {
+void SDCard::write(const std::string& data) {
     printf("write >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     FF_FILE *pxFile = ff_fopen("/sd0/weather.txt", "a");
     ff_fprintf(pxFile, data.c_str());
@@ -171,7 +147,7 @@ void CBSD::write(const std::string& data) {
     ff_fclose(pxFile);
 }
 
-void CBSD::write2() {
+void SDCard::write2() {
     FF_Disk_t *pxDisk = FF_SDDiskInit("sd0");
     configASSERT(pxDisk);
     FF_Error_t xError = FF_SDDiskMount(pxDisk);
@@ -206,7 +182,7 @@ void CBSD::write2() {
     //vTaskDelete(NULL);
 }
 
-void CBSD::writeData(const std::string& data) {
+void SDCard::writeData(const std::string& data) {
     FF_Disk_t *pxDisk = FF_SDDiskInit("sd0");
     configASSERT(pxDisk);
     FF_Error_t xError = FF_SDDiskMount(pxDisk);

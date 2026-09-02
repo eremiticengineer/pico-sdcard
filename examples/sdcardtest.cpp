@@ -10,12 +10,12 @@
 #define TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
 
 void writeToSDCardTask(void* pvParameters) {
-    Codebrane::CBSD *pCBSD = static_cast<Codebrane::CBSD *>(pvParameters);
-    pCBSD->init();
+    SDCard *pSDCard = static_cast<SDCard *>(pvParameters);
+    pSDCard->init();
 
     while (true)
     {
-        pCBSD->writeAfterInit("test for sdcard");
+        pSDCard->writeAfterInit("test for sdcard");
 
         printf("written to sdcard\n");
 
@@ -28,8 +28,8 @@ int main(void) {
 
   sleep_ms(5000);
 
-  Codebrane::CBSD cbsd;
-  xTaskCreate(writeToSDCardTask, "WriteToSDCardTask", 4096, (void*)&cbsd, TASK_PRIORITY, NULL);
+  SDCard sdcard;
+  xTaskCreate(writeToSDCardTask, "WriteToSDCardTask", 4096, (void*)&sdcard, TASK_PRIORITY, NULL);
 
   vTaskStartScheduler();
 
