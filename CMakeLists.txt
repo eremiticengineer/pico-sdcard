@@ -1,21 +1,24 @@
-set(PROJECT sdcardtest)
-
 cmake_minimum_required(VERSION 3.13)
 
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(LIBRARY pico_sdcard)
+set(PROJECT pico_sdcard_test)
 
-set(FREERTOS_KERNEL_PATH "${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel" CACHE STRING "Path to the FreeRTOS Kernel")
+# ---------------------------------------------------------
+# Standalone board selection
+# ---------------------------------------------------------
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    if(DEVICE STREQUAL "seeed_xiao_rp2040")
+        set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
+    elseif(DEVICE STREQUAL "pico2")
+        set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
+    else()
+        message(FATAL_ERROR
+            "Unknown DEVICE='${DEVICE}'. Use pico2 or seeed_xiao_rp2040."
+        )
+    endif()
+endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
-
-#include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
-if ("${PICO_PLATFORM}" STREQUAL "rp2040")
-    include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
-elseif("${PICO_PLATFORM}" STREQUAL "rp2350-arm-s")
-    include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/Community-Supported-Ports/GCC/RP2350_ARM_NTZ/FreeRTOS_Kernel_import.cmake)
-elseif("${PICO_PLATFORM}" STREQUAL "rp2350-riscv")
-    include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2350_RISC-V/FreeRTOS_Kernel_import.cmake)
-endif()
 
 project(${PROJECT} C CXX ASM)
 
@@ -24,32 +27,91 @@ set(CMAKE_CXX_STANDARD 23)
 
 pico_sdk_init()
 
-add_subdirectory(
-  ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-FAT-CLI-for-RPi-Pico/src/FreeRTOS+FAT+CLI build
+# ---------------------------------------------------------
+# FreeRTOS configuration
+# ---------------------------------------------------------
+if(PROJECT_IS_TOP_LEVEL)
+
+    set(FREERTOS_CONFIG_FILE_DIRECTORY
+        ${CMAKE_CURRENT_LIST_DIR}/include
+    )
+
+    set(
+        FREERTOS_KERNEL_PATH
+        "${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel"
+        CACHE STRING
+        "Path to the FreeRTOS Kernel"
+    )
+
+    include(
+        ${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake
+    )
+
+endif()
+
+# ---------------------------------------------------------
+# FreeRTOS+FAT dependency
+# ---------------------------------------------------------
+if(NOT TARGET FreeRTOS+FAT+CLI)
+
+    add_subdirectory(
+        ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-FAT-CLI-for-RPi-Pico/src/FreeRTOS+FAT+CLI
+        ${CMAKE_CURRENT_BINARY_DIR}/freertos-fat
+    )
+
+endif()
+
+target_include_directories(FreeRTOS+FAT+CLI INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/include
 )
 
-add_executable(${PROJECT}
-  src/sdcardtest.cpp
-  src/cbsd/cbsd.h
-  src/cbsd/cbsd.cpp
-  src/cbsd/hw_config.c
+# ---------------------------------------------------------
+# Library
+# ---------------------------------------------------------
+add_library(${LIBRARY}
+    src/sdcard.cpp
+    src/hw_config.c
 )
 
-target_link_libraries(${PROJECT}
-  pico_stdlib
-  hardware_spi
-  FreeRTOS-Kernel
-  FreeRTOS-Kernel-Heap4
-  FreeRTOS+FAT+CLI
+target_include_directories(${LIBRARY} PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src
 )
 
-# FreeRTOSConfig.h needs to be in the include path
-target_include_directories(${PROJECT} PUBLIC
-  include/
-  src/cbsd
+target_link_libraries(${LIBRARY} PUBLIC
+    pico_stdlib
+    hardware_spi
+    FreeRTOS+FAT+CLI
 )
 
-pico_enable_stdio_usb(${PROJECT} 1)
-pico_enable_stdio_uart(${PROJECT} 1)
+# ---------------------------------------------------------
+# Standalone test
+# ---------------------------------------------------------
+if(PROJECT_IS_TOP_LEVEL)
 
-pico_add_extra_outputs(${PROJECT})
+    message(STATUS "DEVICE=${DEVICE}")
+    message(STATUS "PICO_BOARD=${PICO_BOARD}")
+    message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
+
+    add_executable(${PROJECT}
+        examples/sdcardtest.cpp
+    )
+
+    target_include_directories(${PROJECT} PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/include
+    )
+
+    target_compile_definitions(${PROJECT} PRIVATE
+        DEVICE_${DEVICE}
+    )
+
+    target_link_libraries(${PROJECT}
+        FreeRTOS-Kernel-Heap4
+        ${LIBRARY}
+    )
+
+    pico_enable_stdio_usb(${PROJECT} 1)
+    pico_enable_stdio_uart(${PROJECT} 1)
+
+    pico_add_extra_outputs(${PROJECT})
+
+endif()
