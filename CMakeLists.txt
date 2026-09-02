@@ -6,16 +6,21 @@ set(PROJECT pico_sdcard_test)
 # ---------------------------------------------------------
 # Standalone board selection
 # ---------------------------------------------------------
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+
     if(DEVICE STREQUAL "seeed_xiao_rp2040")
         set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
+
     elseif(DEVICE STREQUAL "pico2")
         set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
+
     else()
         message(FATAL_ERROR
             "Unknown DEVICE='${DEVICE}'. Use pico2 or seeed_xiao_rp2040."
         )
     endif()
+
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -28,8 +33,9 @@ set(CMAKE_CXX_STANDARD 23)
 pico_sdk_init()
 
 # ---------------------------------------------------------
-# FreeRTOS configuration
+# Standalone FreeRTOS configuration
 # ---------------------------------------------------------
+
 if(PROJECT_IS_TOP_LEVEL)
 
     set(FREERTOS_CONFIG_FILE_DIRECTORY
@@ -52,22 +58,46 @@ endif()
 # ---------------------------------------------------------
 # FreeRTOS+FAT dependency
 # ---------------------------------------------------------
+
 if(NOT TARGET FreeRTOS+FAT+CLI)
 
-    add_subdirectory(
-        ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-FAT-CLI-for-RPi-Pico/src/FreeRTOS+FAT+CLI
-        ${CMAKE_CURRENT_BINARY_DIR}/freertos-fat
+    if(PROJECT_IS_TOP_LEVEL)
+
+        add_subdirectory(
+            ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-FAT-CLI-for-RPi-Pico/src/FreeRTOS+FAT+CLI
+            ${CMAKE_CURRENT_BINARY_DIR}/freertos-fat
+        )
+
+    else()
+
+        message(FATAL_ERROR
+            "pico_sdcard requires the FreeRTOS+FAT+CLI target. "
+            "The parent project must add FreeRTOS+FAT before pico_sdcard."
+        )
+
+    endif()
+
+endif()
+
+# FreeRTOS+FAT needs access to FreeRTOSFATConfig.h.
+#
+# In a standalone build this comes from pico-sdcard/include.
+# In the weather station this also remains the SD-card-specific
+# FAT configuration.
+if(TARGET FreeRTOS+FAT+CLI)
+
+    target_include_directories(
+        FreeRTOS+FAT+CLI
+        INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/include
     )
 
 endif()
 
-target_include_directories(FreeRTOS+FAT+CLI INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/include
-)
-
 # ---------------------------------------------------------
 # Library
 # ---------------------------------------------------------
+
 add_library(${LIBRARY}
     src/sdcard.cpp
     src/hw_config.c
@@ -86,6 +116,7 @@ target_link_libraries(${LIBRARY} PUBLIC
 # ---------------------------------------------------------
 # Standalone test
 # ---------------------------------------------------------
+
 if(PROJECT_IS_TOP_LEVEL)
 
     message(STATUS "DEVICE=${DEVICE}")
