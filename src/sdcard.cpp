@@ -140,7 +140,6 @@ void SDCard::unmount() {
 }
 
 void SDCard::write(const std::string& data) {
-    printf("write >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     FF_FILE *pxFile = ff_fopen("/sd0/weather.txt", "a");
     ff_fprintf(pxFile, data.c_str());
     ff_fprintf(pxFile, "\n");
