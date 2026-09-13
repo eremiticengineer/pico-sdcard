@@ -49,3 +49,7 @@ pico-examples/freertos/FreeRTOSConfig_examples_common.h
 undefined reference to `sd_get_num'
 
 [Writing data to SD card using the no-OS-FatFS-SD-SPI-RPi-Pico library](https://forums.raspberrypi.com/viewtopic.php?t=342315&sid=effaefd26682877749f8977bb96a1186)
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
